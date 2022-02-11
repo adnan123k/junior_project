@@ -1,6 +1,8 @@
 import 'package:drawer_swipe/drawer_swipe.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../../controller/userController.dart';
 import '../../data.dart';
 
 class customizeDrawer extends StatefulWidget {
@@ -33,6 +35,7 @@ class _customizeDrawer extends State<customizeDrawer> {
     );
   }
 
+  final UserController c = Get.find<UserController>();
   Widget buildDrawer() {
     return Container(
         child: Center(
@@ -49,54 +52,30 @@ class _customizeDrawer extends State<customizeDrawer> {
               textDirection: textDirection,
             ),
             onTap: () {
-              Navigator.pushReplacementNamed(context, '/home');
+              Get.offAndToNamed('/home');
             },
           ),
-          Divider(),
-          ListTile(
-            selected: widget.selected == "messages",
-            leading: Icon(Icons.message_outlined),
-            title: Text('رسائل', textDirection: textDirection),
-            onTap: () {
-              Navigator.of(context).pushReplacementNamed('/messages');
-            },
-          ),
-          Divider(),
-          ListTile(
-              selected: widget.selected == "students",
-              leading: Icon(Icons.school_outlined),
-              title: Text(
-                'طلاب',
-                textDirection: textDirection,
-              ),
-              onTap: () {
-                Navigator.of(context).pushReplacementNamed('/student');
-              }),
-          Divider(),
-          ListTile(
-              selected: widget.selected == "teachers",
-              leading: Icon(Icons.school_sharp),
-              title: Text('معلمين', textDirection: textDirection),
-              onTap: () {
-                Navigator.of(context).pushReplacementNamed('/teacher');
-              }),
-          Divider(),
-          ListTile(
-            selected: widget.selected == "video",
-            leading: Icon(Icons.video_call),
-            title: Text('اضافة درس', textDirection: textDirection),
-            onTap: () {
-              Navigator.of(context).pushReplacementNamed('/video');
-            },
-          ),
-          Divider(),
-          ListTile(
-              selected: widget.selected == "homework",
-              leading: Icon(Icons.home_work_outlined),
-              title: Text('وظائف', textDirection: textDirection),
-              onTap: () {
-                Navigator.of(context).pushReplacementNamed('/homework');
-              }),
+          c.currentUser.value.type != "admin" ? SizedBox() : Divider(),
+          c.currentUser.value.type != "admin"
+              ? SizedBox()
+              : ListTile(
+                  selected: widget.selected == "teachers",
+                  leading: Icon(Icons.school_sharp),
+                  title: Text('معلمين', textDirection: textDirection),
+                  onTap: () {
+                    Get.offAndToNamed('/teacher');
+                  }),
+          c.currentUser.value.type != "teacher" ? SizedBox() : Divider(),
+          c.currentUser.value.type != "teacher"
+              ? SizedBox()
+              : ListTile(
+                  selected: widget.selected == "video",
+                  leading: Icon(Icons.video_call),
+                  title: Text('اضافة درس', textDirection: textDirection),
+                  onTap: () {
+                    Get.offAndToNamed('/video');
+                  },
+                ),
           Divider(),
           ListTile(
             selected: widget.selected == "best students",
@@ -106,7 +85,7 @@ class _customizeDrawer extends State<customizeDrawer> {
               textDirection: textDirection,
             ),
             onTap: () {
-              Navigator.of(context).pushReplacementNamed('/topStudents');
+              Get.offAndToNamed('/topStudents');
             },
           ),
           Divider(),
@@ -115,22 +94,14 @@ class _customizeDrawer extends State<customizeDrawer> {
               leading: Icon(Icons.poll_sharp),
               title: Text('مناقشات', textDirection: textDirection),
               onTap: () {
-                Navigator.of(context).pushReplacementNamed('/discussion');
-              }),
-          Divider(),
-          ListTile(
-              selected: widget.selected == "notification",
-              leading: Icon(Icons.notification_important),
-              title: Text('اعلانات', textDirection: textDirection),
-              onTap: () {
-                Navigator.of(context).pushReplacementNamed('/notification');
+                Get.offAndToNamed('/discussion');
               }),
           Divider(),
           ListTile(
               leading: Icon(Icons.input_outlined),
               title: Text('تسجيل خروج', textDirection: textDirection),
               onTap: () {
-                Navigator.of(context).pushReplacementNamed('/');
+                c.signOut();
               }),
         ],
       ),

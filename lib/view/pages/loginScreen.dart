@@ -1,40 +1,38 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:get/get.dart';
+
+import 'package:junior_project/controller/userController.dart';
+import 'package:junior_project/view/widget/alertDialog.dart';
 
 import '../widget/textForm.dart';
-import '../widget/raisedButton.dart';
+
 import '../../data.dart';
 import '../widget/container.dart';
-import '../widget/dropdownButton.dart';
-import 'loadingScreen.dart';
 
-class loginPage extends StatefulWidget {
+class LoginPage extends StatefulWidget {
   @override
-  State<loginPage> createState() => _loginPage();
+  State<LoginPage> createState() => _LoginPage();
 }
 
-class _loginPage extends State<loginPage> {
+class _LoginPage extends State<LoginPage> {
   GlobalKey<FormState> key = new GlobalKey<FormState>();
-  String dropdownValue = "student";
+  final UserController c = Get.find<UserController>();
+
   TextEditingController userNameController = new TextEditingController();
   TextEditingController passwordController = new TextEditingController();
-  List<DropdownMenuItem> items = [
-    DropdownMenuItem(value: "student", child: Text("student")),
-    DropdownMenuItem(value: "teacher", child: Text("teacher")),
-    DropdownMenuItem(value: "manger", child: Text("manger"))
-  ];
-
+  TextEditingController fullNameController = new TextEditingController();
+  TextEditingController fatherController = new TextEditingController();
+  TextEditingController motherController = new TextEditingController();
+  Color textFieldColor = Color(0xffF7F7F7);
   bool validUsername = true;
   bool validPassword = true;
 
   dynamic userNameValidation(_) {
-    if (userNameController.text.trim().isEmpty ||
-        !RegExp(r"[a-zA-Z]([a-zA-Z]| )+")
-            .hasMatch(userNameController.text.trim())) {
+    if (userNameController.text.trim().isEmpty) {
       validUsername = false;
 
-      return "username must be consist of only characters and not empty";
+      return "username must not be empty";
     } else {
       validUsername = true;
 
@@ -54,23 +52,49 @@ class _loginPage extends State<loginPage> {
     }
   }
 
-  void signIn() {
-    if (key.currentState.validate() && validUsername && validPassword) {
-      Navigator.of(context).pushReplacementNamed('/home');
-      // Navigator.of(context).pushReplacement(
-      //     MaterialPageRoute(builder: (context) => loadingPage()));
+  bool validFullName = true;
+  dynamic fullnameValidation(_) {
+    if (fullNameController.text.trim().isEmpty) {
+      validFullName = false;
+
+      return "يرجى كتابة الاسم كامل";
     } else {
-      setState(() {});
+      validFullName = true;
+
+      return null;
     }
   }
 
-  void dropDownOnChange(dynamic value) {
-    setState(() {
-      dropdownValue = value;
-    });
+  bool validMotherName = true;
+  dynamic motherNameValidation(_) {
+    if (motherController.text.trim().isEmpty) {
+      validMotherName = false;
+
+      return "يرجى كتابة اسم الام";
+    } else {
+      validMotherName = true;
+
+      return null;
+    }
   }
 
-  Widget validation(containerWidth, containerHeight, text) {
+  bool validFatherName = true;
+  dynamic fatherNameValidation(_) {
+    if (fatherController.text.trim().isEmpty) {
+      validFatherName = false;
+
+      return "يرحى كتابة اسم الاب";
+    } else {
+      validFatherName = true;
+
+      return null;
+    }
+  }
+
+  bool isSignedIn = true;
+
+  Widget validation(containerWidth, containerHeight, text,
+      {TextDirection direction = TextDirection.ltr}) {
     return container(
         width: containerWidth,
         height: containerHeight,
@@ -79,8 +103,75 @@ class _loginPage extends State<loginPage> {
         color: Colors.yellow[300],
         child: AutoSizeText(
           text,
+          textDirection: direction,
           style: TextStyle(color: Colors.red),
         ));
+  }
+
+  void click_me(context) {
+    if (key.currentState != null) {
+      if (key.currentState.validate() && validUsername && validPassword) {
+        if (!isSignedIn &&
+                validFatherName &&
+                validMotherName &&
+                validFullName ||
+            isSignedIn) {
+          (isSignedIn
+                  ? c.signIn(
+                      username: userNameController.text,
+                      password: passwordController.text)
+                  : c.sign_up(
+                      username: userNameController.text,
+                      password: passwordController.text,
+                      fullName: fullNameController.text,
+                      motherName: motherController.text,
+                      fatherName: fatherController.text))
+              .then((value) {
+            if (value["error"]) {
+              showAlertDialog(context,
+                  content: Text(value["msg"] +
+                      "\n" +
+                      ((value.containsKey("errors") && value["errors"] != null)
+                          ? (value["errors"].containsKey("username")
+                              ? value["errors"]["username"][0]
+                              : value["errors"].containsKey("password")
+                                  ? value["errors"]["password"][0]
+                                  : value["errors"].containsKey("full_name")
+                                      ? value["errors"]["full_name"][0]
+                                      : value["errors"]
+                                              .containsKey("mother_name")
+                                          ? value["errors"]["mother_name"][0]
+                                          : value["errors"]
+                                                  .containsKey("father_name")
+                                              ? value["errors"]["father_name"]
+                                                  [0]
+                                              : "")
+                          : "")),
+                  action: [
+                    FlatButton(
+                        onPressed: () {
+                          return Navigator.of(context).pop();
+                        },
+                        child: Text("ok"))
+                  ]);
+            } else {
+              Get.showSnackbar(GetSnackBar(
+                title: "message",
+                message: "login successfully",
+                duration: Duration(seconds: 1),
+              ));
+              Navigator.of(context).pushReplacementNamed('/home');
+            }
+          });
+        } else {
+          setState(() {});
+        }
+        // Navigator.of(context).pushReplacement(
+        //     MaterialPageRoute(builder: (context) => loadingPage()));
+      } else {
+        setState(() {});
+      }
+    }
   }
 
   @override
@@ -100,81 +191,183 @@ class _loginPage extends State<loginPage> {
               image: AssetImage(logingInImage),
               child: Form(
                   key: key,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        logoImage,
-                        height: height > 500 ? 100 : height * 0.3,
-                        width: width > 500 ? 100 : width * 0.5,
-                      ),
-                      container(
-                          width: containerWidth,
-                          height: containerHeight,
-                          child: textForm(
-                              senderController: userNameController,
-                              validateFunction: userNameValidation,
-                              type: TextInputType.name,
-                              radius: textFieldRadius,
-                              cursorColor: cursorColor,
-                              isContentPadding: true,
-                              cpv: height > 500 ? padding : height * 0.06,
-                              cph: 15.0,
-                              hintText: "username")),
-                      !validUsername
-                          ? validation(containerWidth, containerHeight,
-                              "username must be only consist of  characters and mustn\'t empty")
-                          : SizedBox(),
-                      SizedBox(
-                        height: padding,
-                      ),
-                      container(
-                          width: containerWidth,
-                          height: containerHeight,
-                          child: textForm(
-                              senderController: passwordController,
-                              isPassword: true,
-                              validateFunction: passwordValidation,
-                              hintText: "password",
-                              radius: textFieldRadius,
-                              cursorColor: cursorColor,
-                              isContentPadding: true,
-                              cpv: height > 500 ? 10.0 : height * 0.06,
-                              cph: 15.0)),
-                      !validPassword
-                          ? validation(containerWidth, containerHeight,
-                              "password mustn\'t be  empty")
-                          : SizedBox(),
-                      SizedBox(height: padding),
-                      Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "sign in as: ",
-                              style:
-                                  TextStyle(fontSize: 20.0, color: Colors.red),
-                            ),
-                            container(
-                                height: height > 500 ? 50 : height * 0.1,
-                                width: width > 500 ? 150 : width * 0.3,
-                                color: Colors.blue,
-                                radius: textFieldRadius,
-                                padding: padding,
-                                child: dropDownButton(
-                                    function: dropDownOnChange,
-                                    initValue: dropdownValue,
-                                    list: items))
-                          ]),
-                      normalButton(
-                          function: signIn,
-                          child: Text(
-                            "sign in",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          color: raisedButtonColor,
-                          radius: raisedButtonRadius)
-                    ],
-                  ))),
+                  child: Center(
+                      child: SingleChildScrollView(
+                          padding: EdgeInsets.only(
+                              bottom: padding, top: height * 0.1),
+                          child: Column(
+                            children: [
+                              Image.asset(
+                                logoImage,
+                                height: height > 500 ? 100 : height * 0.3,
+                                width: width > 500 ? 100 : width * 0.5,
+                              ),
+                              !isSignedIn
+                                  ? container(
+                                      width: containerWidth,
+                                      height: containerHeight,
+                                      child: textForm(
+                                          senderController: fullNameController,
+                                          textDirection: TextDirection.rtl,
+                                          hintDirection: TextDirection.rtl,
+                                          validateFunction: fullnameValidation,
+                                          type: TextInputType.name,
+                                          radius: textFieldRadius,
+                                          cursorColor: cursorColor,
+                                          color: textFieldColor,
+                                          isContentPadding: true,
+                                          cpv: height > 500
+                                              ? padding
+                                              : height * 0.06,
+                                          cph: 15.0,
+                                          hintText: "اسم الكامل"))
+                                  : SizedBox(),
+                              isSignedIn
+                                  ? SizedBox()
+                                  : !validFullName
+                                      ? validation(
+                                          containerWidth,
+                                          containerHeight,
+                                          "يرجى كتابة الاسم كامل",
+                                          direction: TextDirection.rtl)
+                                      : SizedBox(),
+                              SizedBox(height: padding),
+                              !isSignedIn
+                                  ? container(
+                                      width: containerWidth,
+                                      height: containerHeight,
+                                      child: textForm(
+                                          senderController: fatherController,
+                                          validateFunction:
+                                              fatherNameValidation,
+                                          textDirection: TextDirection.rtl,
+                                          hintDirection: TextDirection.rtl,
+                                          type: TextInputType.name,
+                                          radius: textFieldRadius,
+                                          cursorColor: cursorColor,
+                                          color: textFieldColor,
+                                          isContentPadding: true,
+                                          cpv: height > 500
+                                              ? padding
+                                              : height * 0.06,
+                                          cph: 15.0,
+                                          hintText: "اسم الاب"))
+                                  : SizedBox(),
+                              isSignedIn
+                                  ? SizedBox()
+                                  : !validFatherName
+                                      ? validation(
+                                          containerWidth,
+                                          containerHeight,
+                                          "يرجى كتابة اسم الاب",
+                                          direction: TextDirection.rtl)
+                                      : SizedBox(),
+                              SizedBox(height: padding),
+                              !isSignedIn
+                                  ? container(
+                                      width: containerWidth,
+                                      height: containerHeight,
+                                      child: textForm(
+                                          senderController: motherController,
+                                          validateFunction:
+                                              motherNameValidation,
+                                          textDirection: TextDirection.rtl,
+                                          hintDirection: TextDirection.rtl,
+                                          type: TextInputType.name,
+                                          radius: textFieldRadius,
+                                          cursorColor: cursorColor,
+                                          color: textFieldColor,
+                                          isContentPadding: true,
+                                          cpv: height > 500
+                                              ? padding
+                                              : height * 0.06,
+                                          cph: 15.0,
+                                          hintText: "اسم الام"))
+                                  : SizedBox(),
+                              isSignedIn
+                                  ? SizedBox()
+                                  : !validMotherName
+                                      ? validation(
+                                          containerWidth,
+                                          containerHeight,
+                                          "يرحى كتابة اسم الام",
+                                          direction: TextDirection.rtl)
+                                      : SizedBox(),
+                              SizedBox(height: padding),
+                              container(
+                                  width: containerWidth,
+                                  height: containerHeight,
+                                  child: textForm(
+                                      senderController: userNameController,
+                                      validateFunction: userNameValidation,
+                                      type: TextInputType.name,
+                                      radius: textFieldRadius,
+                                      cursorColor: cursorColor,
+                                      isContentPadding: true,
+                                      color: textFieldColor,
+                                      cpv: height > 500
+                                          ? padding
+                                          : height * 0.06,
+                                      cph: 15.0,
+                                      hintText: "username")),
+                              !validUsername
+                                  ? validation(containerWidth, containerHeight,
+                                      "username  mustn\'t be empty")
+                                  : SizedBox(),
+                              SizedBox(
+                                height: padding,
+                              ),
+                              container(
+                                  width: containerWidth,
+                                  height: containerHeight,
+                                  child: textForm(
+                                      senderController: passwordController,
+                                      isPassword: true,
+                                      validateFunction: passwordValidation,
+                                      hintText: "password",
+                                      radius: textFieldRadius,
+                                      color: textFieldColor,
+                                      cursorColor: cursorColor,
+                                      isContentPadding: true,
+                                      cpv: height > 500 ? 10.0 : height * 0.06,
+                                      cph: 15.0)),
+                              !validPassword
+                                  ? validation(containerWidth, containerHeight,
+                                      "password mustn\'t be  empty")
+                                  : SizedBox(),
+                              SizedBox(height: padding),
+                              Obx(() => c.isLoading.isTrue
+                                  ? CircularProgressIndicator()
+                                  : RaisedButton(
+                                      elevation: padding,
+                                      onPressed: () {
+                                        click_me(context);
+                                      },
+                                      child: Text(
+                                        isSignedIn ? "sign in" : "sign up",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      padding: EdgeInsets.all(padding),
+                                      color: raisedButtonColor,
+                                      shape: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              style: BorderStyle.none),
+                                          borderRadius: BorderRadius.only(
+                                              bottomLeft: Radius.circular(
+                                                  raisedButtonRadius),
+                                              bottomRight: Radius.circular(
+                                                  raisedButtonRadius))),
+                                    )),
+                              FlatButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      isSignedIn = !isSignedIn;
+                                    });
+                                  },
+                                  child: Text("switch to " +
+                                      (isSignedIn ? "sign up" : "sign in")))
+                            ],
+                          ))))),
         ));
   }
 }

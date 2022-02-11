@@ -1,95 +1,51 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:junior_project/controller/userController.dart';
+
 import 'package:junior_project/view/pages/commentScreen.dart';
+import '../../controller/authController.dart';
 import './container.dart';
-import './raisedButton.dart';
 
 import '../../data.dart';
 
-int points = 0;
-Future<void> showPointDialog(height, width, context) {
-  return showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            content: container(
-                height: height * 0.2,
-                width: width * 0.5,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                        onPressed: () {
-                          if (points != 0)
-                            setState(() {
-                              points++;
-                            });
-                        },
-                        icon: Icon(
-                          Icons.add,
-                          color: Colors.green,
-                          size: 30.0,
-                        )),
-                    AutoSizeText(
-                      points.toString(),
-                      style: TextStyle(fontSize: 30.0),
-                    ),
-                    IconButton(
-                        onPressed: () {
-                          setState(() {
-                            points--;
-                          });
-                        },
-                        icon: Icon(
-                          Icons.exposure_minus_1,
-                          color: Colors.red,
-                          size: 30.0,
-                        ))
-                  ],
-                )),
-            actions: [
-              normalButton(
-                  function: () {
-                    Navigator.of(context).pop();
-                  },
-                  color: Colors.amber[400],
-                  child: Text("تاكيد"))
-            ],
-          );
-        });
-      });
-}
-
-Widget cardHeader(width, height, context) {
+final UserController _userController = Get.find<UserController>();
+Widget cardHeader(width, height, context, content, fun) {
   return container(
       width: width,
       height: height * 0.1,
       right: padding,
       child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-        IconButton(
-            icon: Icon(
-          Icons.delete,
-          color: Colors.red,
-        )),
-        FlatButton(
-          onPressed: () async {
-            await showPointDialog(height, width, context);
-          },
-          child: AutoSizeText("تنقيص نقاط",
-              textDirection: textDirection,
-              style: TextStyle(color: Colors.blue)),
-        ),
+        (_userController.currentUser.value.userName == content.userName ||
+                _userController.currentUser.value.type == "teacher")
+            ? IconButton(
+                onPressed: fun,
+                icon: Icon(
+                  Icons.delete,
+                  color: Colors.red,
+                ))
+            : SizedBox(),
+        _userController.currentUser.value.type != "teacher"
+            ? SizedBox()
+            : FlatButton(
+                onPressed: () {
+                  _userController.blockUser(content.user_id).then((value) {
+                    if (value) fun();
+                  });
+                },
+                child: AutoSizeText("حظر",
+                    textDirection: textDirection,
+                    style: TextStyle(color: Colors.red)),
+              ),
         AutoSizeText(
-          "نشر من قبل محمد",
+          "نشر من قبل " + content.userName,
           textDirection: textDirection,
           textAlign: TextAlign.right,
         )
       ]));
 }
 
-Widget cardBottom(width, height, context) {
+Widget cardBottom(width, height, context, content, fun) {
   return container(
       width: width,
       height: height * 0.1,
@@ -98,7 +54,12 @@ Widget cardBottom(width, height, context) {
           container(
               width: width * 0.5,
               height: height > 500 ? 50 : height * 0.1,
-              child: IconButton(icon: Icon(Icons.thumb_up))),
+              child: IconButton(
+                  onPressed: fun,
+                  icon: Icon(
+                    Icons.thumb_up,
+                    color: content.liked ? Colors.blue : Colors.grey,
+                  ))),
           container(
               width: width * 0.4,
               height: height * 0.1,
@@ -106,7 +67,7 @@ Widget cardBottom(width, height, context) {
                   onPressed: () {
                     Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
-                      return CommentPage();
+                      return CommentPage(content);
                     }));
                   },
                   icon: Icon(Icons.comment)))
@@ -114,26 +75,26 @@ Widget cardBottom(width, height, context) {
       ));
 }
 
-Widget cardBody() {
+Widget cardBody(content) {
   return Padding(
       padding: EdgeInsets.all(padding),
       child: AutoSizeText(
-        "ijijijijiijnjnjnjnjnjnjnjnjnjjnjjnjnnnjnnnjnjnjnjnj",
+        content.body,
         textDirection: textDirection,
         textAlign: TextAlign.right,
       ));
 }
 
-Widget postCard(width, height, context) {
+Widget postCard(width, height, context, content, fun, fun2) {
   return Card(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        cardHeader(width, height, context),
-        cardBody(),
+        cardHeader(width, height, context, content, fun2),
+        cardBody(content),
         Align(
             alignment: Alignment.bottomCenter,
-            child: cardBottom(width, height, context))
+            child: cardBottom(width, height, context, content, fun))
       ],
     ),
   );

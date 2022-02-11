@@ -38,14 +38,14 @@ Widget textForm({
     cursorColor: cursorColor,
     style: style,
     controller: senderController,
-    onChanged: (_) {
+    onChanged: (value) {
       if (onChange != null) {
-        onChange();
+        onChange(value);
       }
     },
     validator: (value) {
       if (validateFunction != null) {
-        validateFunction(value);
+        return validateFunction(value);
       }
     },
     onFieldSubmitted: (value) {
@@ -55,7 +55,7 @@ Widget textForm({
     },
     decoration: InputDecoration(
         hintText: hintText,
-        hintTextDirection :hintDirection,
+        hintTextDirection: hintDirection,
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(radius))),
         contentPadding: isContentPadding

@@ -8,21 +8,25 @@ import 'container.dart';
 Widget labelAndTextForm(height, width, label,
     {keyboardType = TextInputType.text,
     textDirection = textDirection,
-    String value = ""}) {
+    String value = "",
+    textController,
+    validation}) {
   return container(
-      height: height * 0.1,
       width: width,
       padding: padding,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           container(
-              height: height > 500 ? 80 : height * 0.1,
               width: width * 0.7,
               child: value == ""
                   ? textForm(
                       type: keyboardType,
                       radius: textFieldRadius,
+                      isContentPadding: true,
+                      cph: padding,
+                      senderController: textController,
+                      validateFunction: validation,
                       textDirection: textDirection)
                   : AutoSizeText(
                       value,
